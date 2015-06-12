@@ -71,7 +71,7 @@ public class ExtractorRendererBuilder implements RendererBuilder {
     // Invoke the callback.
     TrackRenderer[] renderers = new TrackRenderer[DemoPlayer.RENDERER_COUNT];
     renderers[DemoPlayer.TYPE_VIDEO] = videoRenderer;
-    renderers[DemoPlayer.TYPE_AUDIO] = audioRenderer;
+//    renderers[DemoPlayer.TYPE_AUDIO] = audioRenderer;
     renderers[DemoPlayer.TYPE_DEBUG] = debugRenderer;
     callback.onRenderers(null, null, renderers);
   }

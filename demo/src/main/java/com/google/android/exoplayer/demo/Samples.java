@@ -128,6 +128,10 @@ import java.util.Locale;
   };
 
   public static final Sample[] MISC = new Sample[] {
+    //new Sample("mov2", "https://s3-us-west-2.amazonaws.com/mota-dev-proxy/motaqa/mov2.mov",
+    //    DemoUtil.TYPE_MP4),
+    //new Sample("mp4", "https://s3-us-west-2.amazonaws.com/mota-dev-proxy/motaqa/mp4.mp4",
+    //    DemoUtil.TYPE_MP4),
     new Sample("Dizzy", "http://html5demos.com/assets/dizzy.mp4",
         DemoUtil.TYPE_MP4),
     new Sample("Apple AAC 10s", "https://devimages.apple.com.edgekey.net/"

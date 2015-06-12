@@ -25,6 +25,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +36,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
 
 /**
  * An activity for selecting from a number of samples.
@@ -60,6 +69,21 @@ public class SampleChooserActivity extends Activity {
     sampleAdapter.addAll((Object[]) Samples.HLS);
     sampleAdapter.add(new Header("Misc"));
     sampleAdapter.addAll((Object[]) Samples.MISC);
+      InputStream strm = getResources().openRawResource(R.raw.mov2);
+      try {
+          byte[] buff = new byte[1024];
+          OutputStream outStrm = new FileOutputStream(Environment.getExternalStorageDirectory() + "/" + "mov2.mov");
+          int len = strm.read(buff);
+          while (len != -1){
+              outStrm.write(buff);
+              len = strm.read(buff);
+          }
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+
+      sampleAdapter.add(new Sample("localmp4", Environment.getExternalStorageDirectory() + "/" + "mov2.mov",
+              DemoUtil.TYPE_MP4));
 
     // Add WebM samples if the device has a VP9 decoder.
     try {

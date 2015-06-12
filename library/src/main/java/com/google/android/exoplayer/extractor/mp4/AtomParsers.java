@@ -519,6 +519,12 @@ import java.util.List;
         } else if (childAtomType == Atom.TYPE_sinf) {
           out.trackEncryptionBoxes[entryIndex] = parseSinfFromParent(parent, childStartPosition,
               childAtomSize);
+        } else if (childAtomType == Atom.TYPE_wave) {
+            initializationData = parseEsdsFromContainer(parent, childStartPosition);
+            Pair<Integer, Integer> audioSpecificConfig =
+                    CodecSpecificDataUtil.parseAudioSpecificConfig(initializationData);
+            sampleRate = audioSpecificConfig.first;
+            channelCount = audioSpecificConfig.second;
         }
       } else if (atomType == Atom.TYPE_ac_3 && childAtomType == Atom.TYPE_dac3) {
         // TODO: Choose the right AC-3 track based on the contents of dac3/dec3.
@@ -549,7 +555,51 @@ import java.util.List;
         initializationData == null ? null : Collections.singletonList(initializationData));
   }
 
-  /** Returns codec-specific initialization data contained in an esds box. */
+    /** Returns codec-specific initialization data contained in an esds box from an container Atom. */
+    private static byte[] parseEsdsFromContainer(ParsableByteArray parent, int position) {
+        parent.setPosition(position + Atom.HEADER_SIZE + 4);
+        // Start of the ES_Descriptor (defined in 14496-1)
+        parent.skipBytes(1); // ES_Descriptor tag
+        int varIntByte = parent.readUnsignedByte();
+        while (varIntByte > 127) {
+            varIntByte = parent.readUnsignedByte();
+        }
+        parent.skipBytes(2); // ES_ID
+
+        int flags = parent.readUnsignedByte();
+        if ((flags & 0x80 /* streamDependenceFlag */) != 0) {
+            parent.skipBytes(2);
+        }
+        if ((flags & 0x40 /* URL_Flag */) != 0) {
+            parent.skipBytes(parent.readUnsignedShort());
+        }
+        if ((flags & 0x20 /* OCRstreamFlag */) != 0) {
+            parent.skipBytes(2);
+        }
+
+        // Start of the DecoderConfigDescriptor (defined in 14496-1)
+        parent.skipBytes(1); // DecoderConfigDescriptor tag
+        varIntByte = parent.readUnsignedByte();
+        while (varIntByte > 127) {
+            varIntByte = parent.readUnsignedByte();
+        }
+        parent.skipBytes(13);
+
+        // Start of AudioSpecificConfig (defined in 14496-3)
+        parent.skipBytes(1); // AudioSpecificConfig tag
+        varIntByte = parent.readUnsignedByte();
+        int varInt = varIntByte & 0x7F;
+        while (varIntByte > 127) {
+            varIntByte = parent.readUnsignedByte();
+            varInt = varInt << 8;
+            varInt |= varIntByte & 0x7F;
+        }
+        byte[] initializationData = new byte[varInt];
+        parent.readBytes(initializationData, 0, varInt);
+        return initializationData;
+    }
+
+    /** Returns codec-specific initialization data contained in an esds box. */
   private static byte[] parseEsdsFromParent(ParsableByteArray parent, int position) {
     parent.setPosition(position + Atom.HEADER_SIZE + 4);
     // Start of the ES_Descriptor (defined in 14496-1)
