@@ -15,6 +15,8 @@
  */
 package com.google.android.exoplayer.extractor.mp4;
 
+import android.util.Pair;
+
 import com.google.android.exoplayer.C;
 import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.util.Ac3Util;
@@ -24,8 +26,6 @@ import com.google.android.exoplayer.util.H264Util;
 import com.google.android.exoplayer.util.MimeTypes;
 import com.google.android.exoplayer.util.ParsableByteArray;
 import com.google.android.exoplayer.util.Util;
-
-import android.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -500,7 +500,8 @@ import java.util.List;
     int sampleRate = parent.readUnsignedFixedPoint1616();
 
     byte[] initializationData = null;
-    int childPosition = parent.getPosition();
+    int origChildPosition = parent.getPosition();
+    int childPosition = origChildPosition;
     while (childPosition - position < size) {
       parent.setPosition(childPosition);
       int childStartPosition = parent.getPosition();
@@ -533,7 +534,41 @@ import java.util.List;
       }
       childPosition += childAtomSize;
     }
-
+    if (atomType == Atom.TYPE_mp4a && initializationData == null )
+    {
+        // try for wav atom with 16 byte offset
+        childPosition = origChildPosition+16;
+        while (childPosition - position < size)
+        {
+            parent.setPosition(childPosition);
+            int childStartPosition = parent.getPosition();
+            int childAtomSize = parent.readInt();
+            Assertions.checkArgument(childAtomSize > 0, "childAtomSize should be positive");
+            int childAtomType = parent.readInt();
+            if (childAtomType == Atom.TYPE_wave) {
+                int newChildPosition = childStartPosition + 8;
+                int newstartPosition = childStartPosition;
+                while (newChildPosition - newstartPosition < childAtomSize) {
+                    parent.setPosition(newChildPosition);
+                    int waveChildStartPosition = parent.getPosition();
+                    int waveChildAtomSize = parent.readInt();
+                    Assertions.checkArgument(childAtomSize > 0, "childAtomSize should be positive");
+                    int waveChildAtomType = parent.readInt();
+                    if (waveChildAtomType == Atom.TYPE_esds) {
+                        initializationData = parseEsdsFromParent(parent, waveChildStartPosition);
+                        // TODO: Do we really need to do this? See [Internal: b/10903778]
+                        // Update sampleRate and channelCount from the AudioSpecificConfig initialization data.
+                        Pair<Integer, Integer> audioSpecificConfig =
+                                CodecSpecificDataUtil.parseAudioSpecificConfig(initializationData);
+                        sampleRate = audioSpecificConfig.first;
+                        channelCount = audioSpecificConfig.second;
+                    }
+                    newChildPosition += waveChildAtomSize;
+                }
+            }
+            childPosition += childAtomSize;
+        }
+    }
     // Set the MIME type for ac-3/ec-3 atoms even if the dac3/dec3 child atom is missing.
     String mimeType;
     if (atomType == Atom.TYPE_ac_3) {

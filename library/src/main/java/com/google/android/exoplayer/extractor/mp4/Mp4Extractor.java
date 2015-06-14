@@ -225,8 +225,6 @@ public final class Mp4Extractor implements Extractor, SeekMap {
       }
 
       Track track = AtomParsers.parseTrak(atom, moov.getLeafAtomOfType(Atom.TYPE_mvhd));
-      if (track != null && track.type == Track.TYPE_AUDIO)
-          track = null;
       if (track == null || (track.type != Track.TYPE_AUDIO && track.type != Track.TYPE_VIDEO)) {
         continue;
       }
@@ -368,7 +366,7 @@ public final class Mp4Extractor implements Extractor, SeekMap {
   /** Returns whether the extractor should parse a container atom with type {@code atom}. */
   private static boolean shouldParseContainerAtom(int atom) {
     return atom == Atom.TYPE_moov || atom == Atom.TYPE_trak || atom == Atom.TYPE_mdia
-        || atom == Atom.TYPE_minf || atom == Atom.TYPE_stbl;
+        || atom == Atom.TYPE_minf || atom == Atom.TYPE_stbl || atom == Atom.TYPE_mp4a;
   }
 
   private static final class Mp4Track {

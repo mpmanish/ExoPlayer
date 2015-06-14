@@ -82,9 +82,24 @@ public class SampleChooserActivity extends Activity {
           e.printStackTrace();
       }
 
-      sampleAdapter.add(new Sample("localmp4", Environment.getExternalStorageDirectory() + "/" + "mov2.mov",
+      sampleAdapter.add(new Sample("localmov", Environment.getExternalStorageDirectory() + "/" + "mov2.mov",
               DemoUtil.TYPE_MP4));
 
+      InputStream strmmp4 = getResources().openRawResource(R.raw.mp4);
+      try {
+          byte[] buff = new byte[1024];
+          OutputStream outStrm = new FileOutputStream(Environment.getExternalStorageDirectory() + "/" + "mp4.mp4");
+          int len = strmmp4.read(buff);
+          while (len != -1){
+              outStrm.write(buff);
+              len = strmmp4.read(buff);
+          }
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+
+      sampleAdapter.add(new Sample("localmp4", Environment.getExternalStorageDirectory() + "/" + "mp4.mp4",
+              DemoUtil.TYPE_MP4));
     // Add WebM samples if the device has a VP9 decoder.
     try {
       if (MediaCodecUtil.getDecoderInfo(MimeTypes.VIDEO_VP9, false) != null) {
